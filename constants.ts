@@ -1,56 +1,13 @@
 import { Category, InstallStatus, TechItem, ThemePreset, ThemeColors, Language } from './types';
 
 export const INITIAL_TECH_STACK: TechItem[] = [
+  // Keeping a small demo set for the initial "Boot" look, 
+  // but user is expected to scan their own.
   { id: '1', name: 'Node.js', category: Category.RUNTIME, version: 'v20.11.0', status: InstallStatus.INSTALLED },
   { id: '2', name: 'React', category: Category.FRONTEND, version: 'v18.3.1', status: InstallStatus.INSTALLED },
-  { id: '3', name: 'Vue.js', category: Category.FRONTEND, version: 'v3.4.0', status: InstallStatus.MISSING },
-  { id: '4', name: 'PostgreSQL', category: Category.DATABASE, version: 'v16.1', status: InstallStatus.INSTALLED },
-  { id: '5', name: 'MongoDB', category: Category.DATABASE, version: 'v7.0', status: InstallStatus.MISSING },
   { id: '6', name: 'Express', category: Category.BACKEND, version: 'v4.18.2', status: InstallStatus.INSTALLED },
-  { id: '7', name: 'NestJS', category: Category.BACKEND, version: 'v10.0.0', status: InstallStatus.MISSING },
   { id: '8', name: 'Docker', category: Category.RUNTIME, version: 'v24.0.0', status: InstallStatus.INSTALLED },
-  { id: '9', name: 'Python', category: Category.RUNTIME, version: 'v3.12', status: InstallStatus.INSTALLED },
-  { id: '10', name: 'Redis', category: Category.DATABASE, version: 'v7.2', status: InstallStatus.MISSING },
 ];
-
-// Database for Auto-Detection Simulation
-export const TECH_PRESETS: Record<string, { category: Category; version: string }> = {
-  // Runtime / Languages
-  'Node.js': { category: Category.RUNTIME, version: 'v20.11.0' },
-  'Python': { category: Category.RUNTIME, version: 'v3.12.2' },
-  'Go': { category: Category.RUNTIME, version: 'v1.22.0' },
-  'Rust': { category: Category.RUNTIME, version: 'v1.76.0' },
-  'Java': { category: Category.RUNTIME, version: 'v21.0.2' },
-  'Docker': { category: Category.RUNTIME, version: 'v25.0.3' },
-  'Kubernetes': { category: Category.RUNTIME, version: 'v1.29.2' },
-
-  // Frontend
-  'React': { category: Category.FRONTEND, version: 'v18.3.1' },
-  'Vue.js': { category: Category.FRONTEND, version: 'v3.4.21' },
-  'Angular': { category: Category.FRONTEND, version: 'v17.2.0' },
-  'Svelte': { category: Category.FRONTEND, version: 'v4.2.12' },
-  'Next.js': { category: Category.FRONTEND, version: 'v14.1.0' },
-  'Nuxt': { category: Category.FRONTEND, version: 'v3.10.3' },
-  'Tailwind CSS': { category: Category.FRONTEND, version: 'v3.4.1' },
-  'TypeScript': { category: Category.FRONTEND, version: 'v5.4.2' },
-
-  // Backend
-  'Express': { category: Category.BACKEND, version: 'v4.18.3' },
-  'NestJS': { category: Category.BACKEND, version: 'v10.3.3' },
-  'Spring Boot': { category: Category.BACKEND, version: 'v3.2.3' },
-  'Django': { category: Category.BACKEND, version: 'v5.0.3' },
-  'FastAPI': { category: Category.BACKEND, version: 'v0.110.0' },
-  'Laravel': { category: Category.BACKEND, version: 'v10.47.0' },
-  'ASP.NET Core': { category: Category.BACKEND, version: 'v8.0.2' },
-
-  // Database
-  'PostgreSQL': { category: Category.DATABASE, version: 'v16.2' },
-  'MySQL': { category: Category.DATABASE, version: 'v8.3.0' },
-  'MongoDB': { category: Category.DATABASE, version: 'v7.0.6' },
-  'Redis': { category: Category.DATABASE, version: 'v7.2.4' },
-  'SQLite': { category: Category.DATABASE, version: 'v3.45.1' },
-  'Elasticsearch': { category: Category.DATABASE, version: 'v8.12.2' },
-};
 
 export const THEME_PALETTES: Record<ThemePreset, ThemeColors> = {
   [ThemePreset.NETRUNNER]: {
@@ -132,12 +89,48 @@ export const THEME_PALETTES: Record<ThemePreset, ThemeColors> = {
   }
 };
 
+// Offline/Fallback Data
+export const STATIC_ANALYSIS_DATA: Record<string, Record<Language, string>> = {
+  'react': {
+    'zh-CN': '前端核心义体。利用虚拟DOM构建高频响应的UI界面，如同神经反射般迅速。组件化设计允许快速更换受损模块。',
+    'en-US': 'Frontend core cyberware. Utilizes Virtual DOM for high-reflex UI responses. Component-based design allows hot-swapping of damaged modules.'
+  },
+  'node.js': {
+    'zh-CN': '服务器端运行时引擎。基于V8的高速处理核心，能够维持大量并发连接，是网络黑客维持长时间潜入的必备基础。',
+    'en-US': 'Server-side runtime engine. V8-based high-speed core capable of sustaining massive concurrent connections. Essential for long-duration netruns.'
+  },
+  'typescript': {
+    'zh-CN': '强类型编译协议。为代码注入严格的结构化逻辑，有效防御运行时的数据溢出和逻辑漏洞，属于高级ICE防御层。',
+    'en-US': 'Strongly typed compilation protocol. Injects strict structural logic to prevent runtime data overflows. Classified as advanced ICE defense.'
+  },
+  'docker': {
+    'zh-CN': '隔离容器技术。将应用程序封装在独立的微型环境中，防止病毒交叉感染，便于在不同服务器节点间快速部署和撤离。',
+    'en-US': 'Isolation container tech. Encapsulates apps in independent micro-environments to prevent cross-infection. Enables rapid deployment and extraction.'
+  },
+  'mongodb': {
+    'zh-CN': '非关系型数据仓库。以文档形式存储海量非结构化情报，查询速度极快，适合处理来自街头监控的杂乱数据流。',
+    'en-US': 'NoSQL data warehouse. Stores massive unstructured intel as documents. Blazing fast query speed, perfect for processing chaotic street data.'
+  },
+  'mysql': {
+    'zh-CN': '经典关系型数据库。结构严谨的旧时代遗物，但极其可靠。如同荒坂公司的金库，通过严格的表结构锁定每一位数据。',
+    'en-US': 'Classic RDBMS. Structured relic of the old net, but incredibly reliable. Like an Arasaka vault, locking down every bit via strict table structures.'
+  },
+  'vue': {
+    'zh-CN': '渐进式前端框架。轻量级义体，适应性极强。可以像插件一样集成到现有系统中，提供双向数据绑定的即时反馈。',
+    'en-US': 'Progressive frontend framework. Lightweight cyberware with high adaptability. Integrates like a plugin for immediate two-way data binding feedback.'
+  },
+  'express': {
+    'zh-CN': '极简后端路由框架。快速构建API通道的骨架工具。没有多余的装饰，只有纯粹的速度和灵活性，适合快速搭建临时中继站。',
+    'en-US': 'Minimalist backend routing framework. Skeleton tool for rapid API tunneling. No frills, just pure speed and flexibility for temporary relay stations.'
+  }
+};
+
 // Translation Dictionary
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   'zh-CN': {
     // Header
     'app.title': '系统监视中枢',
-    'header.subtitle': 'V.2.77 // 黑客接入界面 //',
+    'header.subtitle': 'V.3.0 // 全自动依赖扫描 //',
     'header.signal': '实时信号',
     'header.region': '区域: 夜之城_主网',
     'header.connection': '连接: SECURE_TLS_1.3 (加密)',
@@ -145,51 +138,33 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     
     // Sidebar
     'sidebar.integrity': '系统完整性',
-    'sidebar.modules': '模块',
+    'sidebar.modules': '已检测模块',
     'sidebar.status.best': '最佳',
     'sidebar.status.unstable': '不稳定',
     'sidebar.hardware': '硬件遥测',
     'sidebar.upload': '上行 (Mb/s)',
     'sidebar.download': '下行 (Mb/s)',
-    'sidebar.add_protocol': '+ 注册新组件',
+    'sidebar.scan_system': '扫描系统依赖 (Import)',
     'sidebar.settings': '系统设置 / 主题',
     'sidebar.filter': '过滤协议',
     'sidebar.filter.all': '全部显示',
-    'sidebar.force_install': '强制安装所有组件',
     
     // Cards
-    'card.config': '[配置]',
-    'card.toggle': '切换状态',
-    'card.scan': '运行诊断程序',
-    'card.scanning': '正在扫描...',
-    'status.installed': '已安装',
+    'card.scan': '分析组件',
+    'card.scanning': '正在分析...',
+    'status.installed': '已检测',
     'status.missing': '未检测到',
-    'status.corrupted': '损坏',
-    'status.pending': '挂起',
     
-    // Modal
-    'modal.title.add': '接入新协议',
-    'modal.title.edit': '编辑组件配置',
-    'modal.mode.auto': 'AUTO_SCAN_ACTIVE',
-    'modal.mode.manual': 'MANUAL_OVERRIDE',
-    'modal.label.name': '目标组件名称',
-    'modal.placeholder.name': '输入或选择 (如: React, Python...)',
-    'modal.scanner.status': '扫描器状态',
-    'modal.scanner.locked': '目标已锁定',
-    'modal.scanner.waiting': '等待输入...',
-    'modal.scanner.category': '分类识别:',
-    'modal.scanner.version': '版本信号:',
-    'modal.scanner.install': '安装状态:',
-    'modal.scanner.confirmed': '已确认 (INSTALLED)',
-    'modal.scanner.nosignal': '[ 无信号 ]',
-    'modal.label.comp_name': '组件名称',
-    'modal.label.version': '版本号',
-    'modal.label.category': '分类',
-    'modal.label.status': '当前状态',
-    'modal.btn.cancel': '取消',
-    'modal.btn.delete': '删除',
-    'modal.btn.save': '保存覆写',
-    'modal.btn.inject': '执行注入',
+    // Modal (Scanner)
+    'modal.title.scan': '系统清单扫描',
+    'modal.desc.scan': '连接至本地项目环境。上传 package.json 或粘贴依赖清单以进行全自动检测。',
+    'modal.dropzone': '拖拽 package.json 到此处 或 点击上传',
+    'modal.paste_label': '或直接粘贴 JSON 内容:',
+    'modal.placeholder.paste': '{\n  "dependencies": {\n    "react": "^18.2.0",\n    ...\n  }\n}',
+    'modal.btn.cancel': '取消连接',
+    'modal.btn.process': '执行扫描程序',
+    'modal.btn.demo': '模拟本地环境 (演示)',
+    'modal.error.json': '错误: 无效的 JSON 格式',
     
     // Terminal
     'term.header': '系统日志 // 诊断信息',
@@ -225,22 +200,21 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     
     // Logs
     'log.init': '正在初始化系统监视器...',
-    'log.ready': '系统就绪。等待指令输入。',
-    'log.status_change': '状态变更',
-    'log.start_scan': '启动深度扫描',
-    'log.scan_complete': '扫描完成. 情报已上传。',
-    'log.batch_script': '正在执行 PowerShell 批量部署脚本...',
-    'log.batch_complete': '批量操作完成。所有系统上线。',
-    'log.config_update': '配置已更新',
-    'log.new_protocol': '新协议已注册',
-    'log.protocol_deleted': '协议已清除',
+    'log.ready': '系统就绪。等待依赖扫描。',
+    'log.start_scan': '启动组件分析',
+    'log.scan_complete': '分析完成. 情报已上传。',
+    'log.manifest_loaded': 'Manifest清单已加载。',
+    'log.deps_detected': '检测到依赖项:',
+    'log.parse_error': '清单解析失败: JSON 格式错误',
     'log.visual_reset': '视觉协议重置',
     'log.lang_change': '语言核心变更',
+    'log.demo_loaded': '已加载模拟环境数据。',
+    'log.offline_fallback': 'AI 链路离线。调用本地情报库。',
   },
   'en-US': {
     // Header
     'app.title': 'SYSTEM OVERSEER',
-    'header.subtitle': 'V.2.77 // NETRUNNER INTERFACE //',
+    'header.subtitle': 'V.3.0 // AUTO-DETECT SCANNER //',
     'header.signal': 'LIVE SIGNAL',
     'header.region': 'REGION: NIGHT_CITY_MAIN',
     'header.connection': 'CONN: SECURE_TLS_1.3 (ENCRYPTED)',
@@ -248,51 +222,33 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     
     // Sidebar
     'sidebar.integrity': 'SYSTEM INTEGRITY',
-    'sidebar.modules': 'MODULES',
+    'sidebar.modules': 'DETECTED MODULES',
     'sidebar.status.best': 'OPTIMAL',
     'sidebar.status.unstable': 'UNSTABLE',
     'sidebar.hardware': 'HARDWARE TELEMETRY',
     'sidebar.upload': 'UPLINK (Mb/s)',
     'sidebar.download': 'DOWNLINK (Mb/s)',
-    'sidebar.add_protocol': '+ REGISTER PROTOCOL',
+    'sidebar.scan_system': 'SCAN DEPENDENCIES (Import)',
     'sidebar.settings': 'SYSTEM / THEME',
     'sidebar.filter': 'FILTER PROTOCOLS',
     'sidebar.filter.all': 'SHOW ALL',
-    'sidebar.force_install': 'FORCE INSTALL ALL',
     
     // Cards
-    'card.config': '[CONFIG]',
-    'card.toggle': 'TOGGLE STATE',
-    'card.scan': 'RUN DIAGNOSTIC',
-    'card.scanning': 'SCANNING...',
-    'status.installed': 'INSTALLED',
+    'card.scan': 'ANALYZE COMPONENT',
+    'card.scanning': 'ANALYZING...',
+    'status.installed': 'DETECTED',
     'status.missing': 'MISSING',
-    'status.corrupted': 'CORRUPTED',
-    'status.pending': 'PENDING',
     
-    // Modal
-    'modal.title.add': 'INJECT NEW PROTOCOL',
-    'modal.title.edit': 'EDIT COMPONENT CONFIG',
-    'modal.mode.auto': 'AUTO_SCAN_ACTIVE',
-    'modal.mode.manual': 'MANUAL_OVERRIDE',
-    'modal.label.name': 'TARGET COMPONENT',
-    'modal.placeholder.name': 'Type or Select (e.g., React, Python...)',
-    'modal.scanner.status': 'SCANNER STATUS',
-    'modal.scanner.locked': 'TARGET LOCKED',
-    'modal.scanner.waiting': 'AWAITING INPUT...',
-    'modal.scanner.category': 'CATEGORY ID:',
-    'modal.scanner.version': 'VERSION SIG:',
-    'modal.scanner.install': 'INSTALL STATE:',
-    'modal.scanner.confirmed': 'CONFIRMED (INSTALLED)',
-    'modal.scanner.nosignal': '[ NO SIGNAL ]',
-    'modal.label.comp_name': 'COMPONENT NAME',
-    'modal.label.version': 'VERSION',
-    'modal.label.category': 'CATEGORY',
-    'modal.label.status': 'CURRENT STATUS',
-    'modal.btn.cancel': 'CANCEL',
-    'modal.btn.delete': 'DELETE',
-    'modal.btn.save': 'OVERWRITE',
-    'modal.btn.inject': 'EXECUTE INJECTION',
+    // Modal (Scanner)
+    'modal.title.scan': 'SYSTEM MANIFEST SCAN',
+    'modal.desc.scan': 'Connect to local project environment. Upload package.json or paste manifest for auto-detection.',
+    'modal.dropzone': 'Drop package.json here or Click to Upload',
+    'modal.paste_label': 'Or paste JSON content directly:',
+    'modal.placeholder.paste': '{\n  "dependencies": {\n    "react": "^18.2.0",\n    ...\n  }\n}',
+    'modal.btn.cancel': 'ABORT CONNECTION',
+    'modal.btn.process': 'EXECUTE SCAN',
+    'modal.btn.demo': 'SIMULATE LOCAL ENV (DEMO)',
+    'modal.error.json': 'ERROR: INVALID JSON FORMAT',
     
     // Terminal
     'term.header': 'SYSTEM LOG // DIAGNOSTICS',
@@ -328,16 +284,15 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     
     // Logs
     'log.init': 'Initializing System Overseer...',
-    'log.ready': 'System Ready. Awaiting input.',
-    'log.status_change': 'STATUS CHANGE',
-    'log.start_scan': 'INITIATING DEEP SCAN',
-    'log.scan_complete': 'Scan Complete. Intel uploaded.',
-    'log.batch_script': 'Executing PowerShell batch deployment script...',
-    'log.batch_complete': 'Batch operation complete. All systems online.',
-    'log.config_update': 'Config Updated',
-    'log.new_protocol': 'New Protocol Registered',
-    'log.protocol_deleted': 'Protocol Purged',
+    'log.ready': 'System Ready. Awaiting dependency scan.',
+    'log.start_scan': 'INITIATING COMPONENT ANALYSIS',
+    'log.scan_complete': 'Analysis Complete. Intel uploaded.',
+    'log.manifest_loaded': 'Manifest Loaded Successfully.',
+    'log.deps_detected': 'Dependencies Detected:',
+    'log.parse_error': 'Manifest Parse Failure: Invalid JSON',
     'log.visual_reset': 'Visual Protocol Reset',
     'log.lang_change': 'Language Core Changed',
+    'log.demo_loaded': 'Simulation Environment Loaded.',
+    'log.offline_fallback': 'AI Link Offline. Accessing Local Intel DB.',
   }
 };

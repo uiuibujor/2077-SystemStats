@@ -3,10 +3,19 @@ import { GlitchHeader } from './components/GlitchHeader';
 import { CyberCard } from './components/CyberCard';
 import { Terminal } from './components/Terminal';
 import { CyberModal } from './components/CyberModal';
-import { SettingsModal } from './components/SettingsModal'; // New
+import { SettingsModal } from './components/SettingsModal';
 import { INITIAL_TECH_STACK, THEME_PALETTES, TRANSLATIONS } from './constants';
 import { Category, InstallStatus, LogEntry, TechItem, ThemePreset, ThemeColors, Language } from './types';
 import { analyzeTech } from './services/geminiService';
+
+// Helper for guessing category based on package name
+const guessCategory = (name: string): Category => {
+  const lower = name.toLowerCase();
+  if (['react', 'vue', 'angular', 'svelte', 'next', 'nuxt', 'tailwind', 'bootstrap', 'framer', 'three', 'vite', 'webpack', 'sass', 'less', 'styled', 'typescript'].some(k => lower.includes(k))) return Category.FRONTEND;
+  if (['express', 'nest', 'koa', 'fastify', 'socket', 'cors', 'body-parser', 'axios', 'mongoose', 'sequelize', 'prisma', 'node'].some(k => lower.includes(k))) return Category.BACKEND;
+  if (['mongo', 'mysql', 'pg', 'postgres', 'redis', 'sqlite', 'mariadb', 'firebase'].some(k => lower.includes(k))) return Category.DATABASE;
+  return Category.RUNTIME;
+};
 
 const App: React.FC = () => {
   const [techStack, setTechStack] = useState<TechItem[]>(INITIAL_TECH_STACK);
@@ -28,9 +37,8 @@ const App: React.FC = () => {
   const [memLoad, setMemLoad] = useState(56);
   const [netStats, setNetStats] = useState({ up: 4.5, down: 120.2, ping: 24 });
   
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<TechItem | null>(null);
+  // Scanner Modal State
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
 
   const isDark = colors.mode === 'dark';
 
@@ -49,7 +57,6 @@ const App: React.FC = () => {
 
   // Initial Boot Sequence
   useEffect(() => {
-    // NOTE: Initial logs use the default language text from t at that moment (likely Chinese default)
     addLog(t['log.init'], 'system');
     setTimeout(() => addLog(t['log.ready'], 'info'), 2000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,21 +95,13 @@ const App: React.FC = () => {
     ? techStack 
     : techStack.filter(item => item.category === filter);
 
-  // Handlers
-  const handleToggleStatus = (id: string) => {
-    setTechStack(prev => prev.map(item => {
-      if (item.id === id) {
-        const newStatus = item.status === InstallStatus.INSTALLED 
-          ? InstallStatus.MISSING 
-          : InstallStatus.INSTALLED;
-        
-        const statusText = newStatus === InstallStatus.INSTALLED ? t['status.installed'] : t['status.missing'];
-        addLog(`${t['log.status_change']}: ${item.name} -> ${statusText}`, newStatus === InstallStatus.INSTALLED ? 'info' : 'error');
-        return { ...item, status: newStatus, description: undefined };
-      }
-      return item;
-    }));
-  };
+  // Translation for Filter Display
+  const getFilterName = (f: string) => {
+    if (f === 'ALL') return t['sidebar.filter.all'];
+    return f; 
+  }
+
+  // -- Handlers --
 
   const handleAnalyze = async (item: TechItem) => {
     if (analyzingId) return;
@@ -111,65 +110,65 @@ const App: React.FC = () => {
     addLog(`${t['log.start_scan']}: ${item.name}...`, 'system');
     
     const statusStr = item.status === InstallStatus.INSTALLED ? t['status.installed'] : t['status.missing'];
-    const analysis = await analyzeTech(item.name, statusStr, language);
+    const analysisResult = await analyzeTech(item.name, statusStr, language);
     
-    setTechStack(prev => prev.map(t => t.id === item.id ? { ...t, description: analysis } : t));
+    setTechStack(prev => prev.map(t => t.id === item.id ? { ...t, description: analysisResult.text } : t));
+    
+    if (analysisResult.isOffline) {
+        addLog(t['log.offline_fallback'], 'warning');
+    }
+    
     addLog(`${item.name} ${t['log.scan_complete']}`, 'info');
     setAnalyzingId(null);
   };
 
-  const installAll = () => {
-      addLog(t['log.batch_script'], 'warning');
-      setTechStack(prev => prev.map(item => ({ ...item, status: InstallStatus.INSTALLED })));
-      setTimeout(() => addLog(t['log.batch_complete'], 'info'), 1000);
-  };
+  // Manifest Parsing Logic
+  const handleManifestScan = (jsonString: string) => {
+    try {
+        const parsed = JSON.parse(jsonString);
+        // Handle dependencies and devDependencies
+        const deps = { ...parsed.dependencies, ...parsed.devDependencies };
+        
+        if (Object.keys(deps).length === 0) {
+            addLog("Scan Warning: No dependencies found in manifest.", 'warning');
+            return;
+        }
 
-  // CRUD Handlers
-  const openAddModal = () => {
-    setEditingItem(null);
-    setIsModalOpen(true);
-  };
+        const newItems: TechItem[] = Object.entries(deps).map(([name, version], index) => ({
+            id: `auto-${Date.now()}-${index}`,
+            name: name,
+            version: String(version).replace('^', 'v').replace('~', 'v'), // Format version
+            category: guessCategory(name),
+            status: InstallStatus.INSTALLED
+        }));
 
-  const openEditModal = (item: TechItem) => {
-    setEditingItem(item);
-    setIsModalOpen(true);
-  };
+        setTechStack(newItems);
+        
+        // Check if it's the demo data
+        if (jsonString.includes("react") && jsonString.includes("socket.io")) {
+           addLog(t['log.demo_loaded'], 'system');
+        } else {
+           addLog(t['log.manifest_loaded'], 'system');
+        }
+        
+        addLog(`${t['log.deps_detected']} ${newItems.length}`, 'info');
+        setIsScanModalOpen(false);
 
-  const handleSaveItem = (savedItem: TechItem) => {
-    if (editingItem) {
-      setTechStack(prev => prev.map(t => t.id === savedItem.id ? savedItem : t));
-      addLog(`${t['log.config_update']}: ${savedItem.name}`, 'info');
-    } else {
-      setTechStack(prev => [...prev, savedItem]);
-      addLog(`${t['log.new_protocol']}: ${savedItem.name}`, 'system');
+    } catch (error) {
+        console.error(error);
+        addLog(t['log.parse_error'], 'error');
     }
-    setIsModalOpen(false);
   };
 
-  const handleDeleteItem = (id: string) => {
-    const item = techStack.find(t => t.id === id);
-    if (item) {
-        setTechStack(prev => prev.filter(t => t.id !== id));
-        addLog(`${t['log.protocol_deleted']}: ${item.name}`, 'error');
-    }
-  };
-
-  // Stats
-  const installedCount = techStack.filter(t => t.status === InstallStatus.INSTALLED).length;
-  const totalCount = techStack.length;
-  const systemHealth = totalCount > 0 ? Math.round((installedCount / totalCount) * 100) : 0;
-
-  // Translation for Filter Display
-  const getFilterName = (f: string) => {
-    if (f === 'ALL') return t['sidebar.filter.all'];
-    return f; 
-  }
-
-  // Widget Base Styles (Calculated from ThemeColors)
+  // Widget Base Styles
   const widgetStyle = {
       borderColor: colors.subtext,
       backgroundColor: colors.surface
   };
+
+  const installedCount = techStack.filter(t => t.status === InstallStatus.INSTALLED).length;
+  const totalCount = techStack.length;
+  const systemHealth = totalCount > 0 ? 100 : 0; // Auto-detect implies present = installed
 
   return (
     <div className={`min-h-screen pb-20 font-sans transition-colors duration-500`} style={{ backgroundColor: colors.bg, color: colors.text }}>
@@ -195,7 +194,7 @@ const App: React.FC = () => {
                     ></div>
                 </div>
                 <div className="mt-4 text-xs flex justify-between" style={{ color: colors.subtext }}>
-                    <span>{t['sidebar.modules']}: {installedCount}/{totalCount}</span>
+                    <span>{t['sidebar.modules']}: {installedCount}</span>
                     <span style={{ color: systemHealth === 100 ? colors.primary : colors.error }}>
                         {systemHealth === 100 ? t['sidebar.status.best'] : t['sidebar.status.unstable']}
                     </span>
@@ -247,10 +246,10 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-             {/* Add New Protocol Button */}
+             {/* Main Action: Scan / Import */}
              <button 
-                onClick={openAddModal}
-                className="w-full py-3 px-4 font-bold uppercase tracking-widest transition-all border-2 hover:scale-[1.02]"
+                onClick={() => setIsScanModalOpen(true)}
+                className="w-full py-3 px-4 font-bold uppercase tracking-widest transition-all border-2 hover:scale-[1.02] group"
                 style={{ 
                     borderColor: colors.primary, 
                     color: colors.primary,
@@ -259,7 +258,7 @@ const App: React.FC = () => {
                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.primary; e.currentTarget.style.color = colors.bg }}
                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = colors.primary }}
             >
-                {t['sidebar.add_protocol']}
+                <span className="group-hover:animate-pulse">{t['sidebar.scan_system']}</span>
             </button>
 
             {/* Settings / Theme Button */}
@@ -290,21 +289,6 @@ const App: React.FC = () => {
                     </button>
                 ))}
             </div>
-
-             {/* Batch Actions */}
-             <div className="mt-8 pt-8 border-t" style={{ borderColor: `${colors.subtext}30` }}>
-                <button 
-                    onClick={installAll}
-                    className="w-full text-white font-bold py-3 px-4 uppercase tracking-widest transition-colors border hover:opacity-90"
-                    style={{ 
-                        backgroundColor: colors.error, 
-                        borderColor: colors.error,
-                        clipPath: 'polygon(10% 0, 100% 0, 100% 100%, 0 100%, 0 20%)' 
-                    }}
-                >
-                    {t['sidebar.force_install']}
-                </button>
-            </div>
           </div>
 
           {/* Main Content Area */}
@@ -316,14 +300,18 @@ const App: React.FC = () => {
                     <CyberCard 
                         key={item.id} 
                         item={item} 
-                        onToggle={handleToggleStatus}
                         onAnalyze={handleAnalyze}
-                        onEdit={openEditModal}
                         analyzing={analyzingId === item.id}
                         colors={colors}
                         language={language}
                     />
                 ))}
+                {filteredStack.length === 0 && (
+                     <div className="col-span-full text-center py-20 border-2 border-dashed" style={{ borderColor: colors.subtext, color: colors.subtext }}>
+                        <h3 className="text-xl font-bold uppercase mb-2">{t['status.missing']}</h3>
+                        <p className="text-sm font-mono opacity-70">NO PROTOCOLS DETECTED. INITIATE SCAN.</p>
+                     </div>
+                )}
             </div>
 
             {/* Terminal Component */}
@@ -335,13 +323,11 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal for Editing/Adding */}
+      {/* Scanner Modal */}
       <CyberModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveItem}
-        onDelete={handleDeleteItem}
-        initialData={editingItem}
+        isOpen={isScanModalOpen}
+        onClose={() => setIsScanModalOpen(false)}
+        onScan={handleManifestScan}
         colors={colors}
         language={language}
       />
@@ -362,7 +348,7 @@ const App: React.FC = () => {
       <div className="fixed bottom-0 right-0 p-4 z-50">
          <span className="px-2 py-1 text-xs font-black border" 
             style={{ backgroundColor: colors.bg, color: colors.primary, borderColor: colors.primary }}>
-            VER: 2077.0.1_{language === 'zh-CN' ? 'CN' : 'EN'}
+            VER: 3.0.0_{language === 'zh-CN' ? 'CN' : 'EN'}
          </span>
       </div>
     </div>

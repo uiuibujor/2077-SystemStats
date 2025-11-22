@@ -1,282 +1,176 @@
-import React, { useState, useEffect } from 'react';
-import { Category, InstallStatus, TechItem, ThemeColors, Language } from '../types';
-import { TECH_PRESETS, TRANSLATIONS } from '../constants';
+import React, { useState, useRef } from 'react';
+import { ThemeColors, Language } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface CyberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (item: TechItem) => void;
-  onDelete: (id: string) => void;
-  initialData: TechItem | null;
+  onScan: (jsonString: string) => void;
   colors: ThemeColors;
   language: Language;
 }
 
-export const CyberModal: React.FC<CyberModalProps> = ({ isOpen, onClose, onSave, onDelete, initialData, colors, language }) => {
-  const isEditMode = !!initialData;
-  const isDark = colors.mode === 'dark';
+export const CyberModal: React.FC<CyberModalProps> = ({ isOpen, onClose, onScan, colors, language }) => {
+  const [jsonInput, setJsonInput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const t = TRANSLATIONS[language];
-  
-  // Form State
-  const [formData, setFormData] = useState<Partial<TechItem>>({
-    name: '',
-    version: '',
-    category: Category.RUNTIME,
-    status: InstallStatus.INSTALLED
-  });
-
-  // State for "Add Mode" auto-detection visualization
-  const [detectedInfo, setDetectedInfo] = useState<{ category: string; version: string } | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        setFormData(initialData);
-        setDetectedInfo(null);
-      } else {
-        setFormData({
-            name: '',
-            version: '', 
-            category: Category.RUNTIME,
-            status: InstallStatus.INSTALLED
-        });
-        setDetectedInfo(null);
-      }
-    }
-  }, [isOpen, initialData]);
-
-  const handleNameChange = (name: string) => {
-    setFormData(prev => ({ ...prev, name }));
-    
-    if (!isEditMode) {
-      const preset = TECH_PRESETS[name];
-      if (preset) {
-        setDetectedInfo({ category: preset.category, version: preset.version });
-        setFormData(prev => ({ 
-            ...prev, 
-            name, 
-            category: preset.category, 
-            version: preset.version,
-            status: InstallStatus.INSTALLED 
-        }));
-      } else {
-        if (name.length > 2) {
-            const simulatedVersion = `v${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 20)}.0_beta`;
-            setDetectedInfo({ category: '未知协议 (默认: Runtime)', version: simulatedVersion });
-            setFormData(prev => ({ 
-                ...prev, 
-                name, 
-                category: Category.RUNTIME, 
-                version: simulatedVersion,
-                status: InstallStatus.INSTALLED
-            }));
-        } else {
-            setDetectedInfo(null);
-        }
-      }
-    }
-  };
+  const isDark = colors.mode === 'dark';
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.name && formData.version) {
-      onSave({
-        id: initialData ? initialData.id : Date.now().toString(),
-        name: formData.name,
-        version: formData.version,
-        category: formData.category as Category,
-        status: formData.status as InstallStatus,
-        description: initialData?.description
-      });
-      onClose();
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setJsonInput(event.target.result as string);
+          setError(null);
+        }
+      };
+      reader.readAsText(file);
     }
   };
 
-  // Dynamic Input Style
+  const handleProcess = () => {
+    try {
+      const parsed = JSON.parse(jsonInput);
+      if (!parsed || (typeof parsed !== 'object')) {
+          throw new Error("Invalid JSON");
+      }
+      onScan(jsonInput);
+      setError(null);
+      setJsonInput(''); // Clear on success
+    } catch (e) {
+      setError(t['modal.error.json']);
+    }
+  };
+
+  const handleDemo = () => {
+    const demoData = {
+      dependencies: {
+        "react": "^18.3.0",
+        "typescript": "^5.0.0",
+        "vite": "^5.2.0",
+        "tailwindcss": "^3.4.1",
+        "three": "^0.160.0",
+        "express": "^4.19.0",
+        "mongodb": "^6.5.0",
+        "socket.io": "^4.7.5"
+      }
+    };
+    onScan(JSON.stringify(demoData));
+    setJsonInput('');
+  };
+
   const inputStyle = {
-      backgroundColor: isDark ? '#1a1a1a' : '#fff',
+      backgroundColor: isDark ? '#0a0a0a' : '#fff',
       borderColor: colors.subtext,
       color: colors.text
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm">
       <div 
-        className="relative w-full max-w-md p-1"
+        className="relative w-full max-w-2xl p-1"
         style={{ 
             backgroundColor: colors.bg,
             clipPath: 'polygon(0 0, 100% 0, 100% 95%, 95% 100%, 0 100%)' 
         }}
       >
         {/* Border Container */}
-        <div className="border-2 p-6 h-full" style={{ borderColor: colors.primary }}>
+        <div className="border-2 p-8 h-full flex flex-col gap-6" style={{ borderColor: colors.primary }}>
             
-            <h2 className="text-2xl font-black uppercase mb-6 flex justify-between items-center" style={{ color: colors.text }}>
-                {isEditMode ? t['modal.title.edit'] : t['modal.title.add']}
-                <span className="text-xs font-mono animate-pulse" style={{ color: colors.primary }}>
-                    {isEditMode ? t['modal.mode.manual'] : t['modal.mode.auto']}
-                </span>
-            </h2>
+            {/* Header */}
+            <div>
+                <h2 className="text-3xl font-black uppercase tracking-tighter mb-2" style={{ color: colors.primary }}>
+                    {t['modal.title.scan']}
+                </h2>
+                <p className="text-sm font-mono opacity-80" style={{ color: colors.text }}>
+                    {t['modal.desc.scan']}
+                </p>
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                
-                {/* MODE: ADD (Simplified) */}
-                {!isEditMode && (
-                    <div className="space-y-6">
-                         <div>
-                            <label className="block text-xs font-bold uppercase mb-2" style={{ color: colors.secondary }}>{t['modal.label.name']}</label>
-                            <input 
-                                list="tech-presets"
-                                type="text" 
-                                value={formData.name}
-                                onChange={e => handleNameChange(e.target.value)}
-                                className="w-full p-3 text-lg font-mono border-2 outline-none focus:border-current"
-                                style={{ ...inputStyle, borderColor: colors.subtext }}
-                                placeholder={t['modal.placeholder.name']}
-                                autoFocus
-                                required
-                            />
-                            <datalist id="tech-presets">
-                                {Object.keys(TECH_PRESETS).map(key => (
-                                    <option key={key} value={key} />
-                                ))}
-                            </datalist>
-                        </div>
-
-                        {/* Auto Detection Display */}
-                        <div className="p-4 border border-dashed" style={{ borderColor: colors.subtext, backgroundColor: `${colors.surface}80` }}>
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className={`w-2 h-2 rounded-full ${detectedInfo ? 'animate-ping' : ''}`} 
-                                     style={{ backgroundColor: detectedInfo ? '#22c55e' : colors.error }}></div>
-                                <span className="text-xs font-bold uppercase" style={{ color: colors.subtext }}>
-                                    {t['modal.scanner.status']}: {detectedInfo ? t['modal.scanner.locked'] : t['modal.scanner.waiting']}
-                                </span>
-                            </div>
-                            
-                            {detectedInfo ? (
-                                <div className="space-y-2 animate-pulse">
-                                    <div className="flex justify-between text-sm font-mono">
-                                        <span style={{ color: colors.subtext }}>{t['modal.scanner.category']}</span>
-                                        <span style={{ color: colors.secondary }}>{detectedInfo.category}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm font-mono">
-                                        <span style={{ color: colors.subtext }}>{t['modal.scanner.version']}</span>
-                                        <span style={{ color: colors.primary }}>{detectedInfo.version}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm font-mono">
-                                        <span style={{ color: colors.subtext }}>{t['modal.scanner.install']}</span>
-                                        <span className="text-green-500">{t['modal.scanner.confirmed']}</span>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-center py-4 text-xs mono-font opacity-50" style={{ color: colors.text }}>
-                                    {t['modal.scanner.nosignal']}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* MODE: EDIT (Full Control) */}
-                {isEditMode && (
-                    <>
-                        {/* Name Input */}
-                        <div>
-                            <label className="block text-xs font-bold uppercase mb-1" style={{ color: colors.secondary }}>{t['modal.label.comp_name']}</label>
-                            <input 
-                                type="text" 
-                                value={formData.name}
-                                onChange={e => setFormData({...formData, name: e.target.value})}
-                                className="w-full p-2 text-sm font-mono border outline-none"
-                                style={inputStyle}
-                                required
-                            />
-                        </div>
-
-                        {/* Version Input */}
-                        <div>
-                            <label className="block text-xs font-bold uppercase mb-1" style={{ color: colors.secondary }}>{t['modal.label.version']}</label>
-                            <input 
-                                type="text" 
-                                value={formData.version}
-                                onChange={e => setFormData({...formData, version: e.target.value})}
-                                className="w-full p-2 text-sm font-mono border outline-none"
-                                style={inputStyle}
-                                required
-                            />
-                        </div>
-
-                        {/* Category Select */}
-                        <div>
-                            <label className="block text-xs font-bold uppercase mb-1" style={{ color: colors.secondary }}>{t['modal.label.category']}</label>
-                            <select 
-                                value={formData.category}
-                                onChange={e => setFormData({...formData, category: e.target.value as Category})}
-                                className="w-full p-2 text-sm font-mono border outline-none"
-                                style={inputStyle}
-                            >
-                                {Object.values(Category).map(c => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Status Select */}
-                        <div>
-                            <label className="block text-xs font-bold uppercase mb-1" style={{ color: colors.secondary }}>{t['modal.label.status']}</label>
-                            <select 
-                                value={formData.status}
-                                onChange={e => setFormData({...formData, status: e.target.value as InstallStatus})}
-                                className="w-full p-2 text-sm font-mono border outline-none"
-                                style={inputStyle}
-                            >
-                                {Object.values(InstallStatus).map(s => (
-                                    <option key={s} value={s}>{s}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3 mt-8">
-                    <button 
-                        type="button" 
-                        onClick={onClose}
-                        className="flex-1 py-2 text-xs font-bold uppercase border hover:opacity-70 transition-opacity"
-                        style={{ borderColor: colors.subtext, color: colors.subtext }}
-                    >
-                        {t['modal.btn.cancel']}
-                    </button>
-                    
-                    {isEditMode && (
-                        <button 
-                            type="button" 
-                            onClick={() => { onDelete(initialData.id); onClose(); }}
-                            className="flex-1 py-2 text-xs font-bold uppercase text-white hover:opacity-80"
-                            style={{ backgroundColor: colors.error }}
-                        >
-                            {t['modal.btn.delete']}
-                        </button>
-                    )}
-
-                    <button 
-                        type="submit" 
-                        disabled={!isEditMode && !detectedInfo}
-                        className="flex-1 py-2 text-xs font-bold uppercase transition-all hover:opacity-90"
-                        style={{ 
-                            backgroundColor: (!isEditMode && !detectedInfo) ? colors.subtext : colors.primary,
-                            color: colors.bg,
-                            opacity: (!isEditMode && !detectedInfo) ? 0.5 : 1,
-                            cursor: (!isEditMode && !detectedInfo) ? 'not-allowed' : 'pointer'
-                        }}
-                    >
-                        {isEditMode ? t['modal.btn.save'] : t['modal.btn.inject']}
-                    </button>
+            {/* Dropzone */}
+            <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed rounded-none p-8 text-center cursor-pointer transition-all hover:opacity-80 group"
+                style={{ 
+                    borderColor: colors.secondary,
+                    backgroundColor: `${colors.surface}50`
+                }}
+            >
+                <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept=".json"
+                    onChange={handleFileUpload}
+                />
+                <div className="text-4xl mb-4 transition-transform group-hover:scale-110" style={{ color: colors.secondary }}>
+                    ⤓
                 </div>
-            </form>
+                <p className="font-bold uppercase tracking-widest text-sm" style={{ color: colors.text }}>
+                    {t['modal.dropzone']}
+                </p>
+            </div>
+
+            {/* Paste Area */}
+            <div className="flex-1">
+                <label className="block text-xs font-bold uppercase mb-2" style={{ color: colors.subtext }}>
+                    {t['modal.paste_label']}
+                </label>
+                <textarea
+                    value={jsonInput}
+                    onChange={(e) => setJsonInput(e.target.value)}
+                    placeholder={t['modal.placeholder.paste']}
+                    className="w-full h-32 p-4 font-mono text-xs border outline-none resize-none"
+                    style={inputStyle}
+                />
+                {error && (
+                    <p className="text-xs font-bold mt-2 animate-pulse" style={{ color: colors.error }}>
+                        {error}
+                    </p>
+                )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col md:flex-row gap-4 pt-4 border-t" style={{ borderColor: `${colors.subtext}30` }}>
+                <button 
+                    onClick={onClose}
+                    className="flex-1 py-3 text-sm font-bold uppercase border hover:opacity-70 transition-opacity"
+                    style={{ borderColor: colors.subtext, color: colors.subtext }}
+                >
+                    {t['modal.btn.cancel']}
+                </button>
+                
+                <button 
+                    onClick={handleDemo}
+                    className="flex-1 py-3 text-sm font-bold uppercase border transition-all hover:bg-opacity-20"
+                    style={{ 
+                        borderColor: colors.secondary,
+                        color: colors.secondary,
+                        backgroundColor: `${colors.secondary}10`
+                    }}
+                >
+                    {t['modal.btn.demo']}
+                </button>
+
+                <button 
+                    onClick={handleProcess}
+                    disabled={!jsonInput.trim()}
+                    className="flex-1 py-3 text-sm font-bold uppercase transition-all hover:brightness-110"
+                    style={{ 
+                        backgroundColor: jsonInput.trim() ? colors.primary : colors.subtext,
+                        color: colors.bg,
+                        opacity: jsonInput.trim() ? 1 : 0.5,
+                        cursor: jsonInput.trim() ? 'pointer' : 'not-allowed'
+                    }}
+                >
+                    {t['modal.btn.process']}
+                </button>
+            </div>
         </div>
       </div>
     </div>

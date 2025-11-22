@@ -4,16 +4,13 @@ import { TRANSLATIONS } from '../constants';
 
 interface CyberCardProps {
   item: TechItem;
-  onToggle: (id: string) => void;
   onAnalyze: (item: TechItem) => void;
-  onEdit: (item: TechItem) => void;
   analyzing: boolean;
   colors: ThemeColors;
   language: Language;
 }
 
-export const CyberCard: React.FC<CyberCardProps> = ({ item, onToggle, onAnalyze, onEdit, analyzing, colors, language }) => {
-  const [isFlashing, setIsFlashing] = useState(false);
+export const CyberCard: React.FC<CyberCardProps> = ({ item, onAnalyze, analyzing, colors, language }) => {
   const isInstalled = item.status === InstallStatus.INSTALLED;
   const t = TRANSLATIONS[language];
   
@@ -28,12 +25,6 @@ export const CyberCard: React.FC<CyberCardProps> = ({ item, onToggle, onAnalyze,
     }
   };
 
-  const handleToggleClick = () => {
-    setIsFlashing(true);
-    onToggle(item.id);
-    setTimeout(() => setIsFlashing(false), 300);
-  };
-
   // Dynamic styles based on installation status
   const cardBorder = isInstalled ? colors.primary : colors.subtext;
   const cardBg = isInstalled ? colors.surface : colors.bg; // Use surface for installed
@@ -41,12 +32,10 @@ export const CyberCard: React.FC<CyberCardProps> = ({ item, onToggle, onAnalyze,
 
   return (
     <div className={`relative group p-0 transition-all duration-300 hover:scale-[1.02] drop-shadow-md`}>
-        {/* Flash Overlay */}
-        <div className={`absolute inset-0 z-20 pointer-events-none transition-opacity duration-300 ${isFlashing ? 'opacity-40 bg-white' : 'opacity-0'}`} style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 90% 100%, 0 100%)' }}></div>
-
+        
         {/* Main Container Shape */}
         <div 
-            className="relative w-full h-full min-h-[180px] border-l-4 p-4 flex flex-col justify-between transition-colors duration-300"
+            className="relative w-full h-full min-h-[160px] border-l-4 p-4 flex flex-col justify-between transition-colors duration-300"
             style={{ 
                 borderColor: cardBorder,
                 backgroundColor: cardBg,
@@ -55,20 +44,13 @@ export const CyberCard: React.FC<CyberCardProps> = ({ item, onToggle, onAnalyze,
         >
             {/* Header */}
             <div className="flex justify-between items-start mb-2">
-                <h3 className="text-2xl font-bold uppercase tracking-wider" style={{ color: textColor }}>
+                <h3 className="text-2xl font-bold uppercase tracking-wider truncate pr-2" style={{ color: textColor }}>
                     {item.name}
                 </h3>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs font-mono border px-1" style={{ color: colors.subtext, borderColor: colors.subtext }}>
                         {item.version}
                     </span>
-                    <button 
-                        onClick={() => onEdit(item)}
-                        className="text-[10px] opacity-50 hover:opacity-100 hover:underline"
-                        style={{ color: textColor }}
-                    >
-                        {t['card.config']}
-                    </button>
                 </div>
             </div>
 
@@ -86,17 +68,9 @@ export const CyberCard: React.FC<CyberCardProps> = ({ item, onToggle, onAnalyze,
             {/* Status & Controls */}
             <div className="flex flex-col gap-2 mt-auto">
                 <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold mono-font animate-pulse" style={{ color: isInstalled ? colors.primary : colors.error }}>
+                    <span className="text-sm font-bold mono-font" style={{ color: isInstalled ? colors.primary : colors.error }}>
                         [{getStatusText(item.status)}]
                     </span>
-                    
-                    <button 
-                        onClick={handleToggleClick}
-                        className="text-[10px] uppercase tracking-widest transition-colors border-b border-transparent hover:opacity-80"
-                        style={{ color: colors.secondary }}
-                    >
-                        {t['card.toggle']}
-                    </button>
                 </div>
 
                 {/* Description Area */}
