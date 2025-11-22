@@ -1,0 +1,5 @@
+{
+  "name": "赛博甲板 // 系统监视器",
+  "description": "赛博朋克2077风格的系统仪表盘，用于跟踪和分析开发栈组件（Node.js, 数据库, 框架），使用Gemini AI提供黑客情报。",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>赛博甲板 // 系统监视器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+      /* Custom Scrollbar for Webkit */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1a1a1a; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3e3e3e; 
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #fcee0a; 
+      }
+      
+      body {
+        /* Background controlled by App component for theming */
+        color: #e0e0e0;
+        font-family: 'Noto Sans SC', 'Rajdhani', sans-serif;
+        overflow-x: hidden;
+      }
+      
+      h1, h2, h3, .cyber-font {
+        font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+      }
+      
+      .mono-font {
+        font-family: 'Share Tech Mono', 'Noto Sans SC', monospace;
+      }
+      
+      /* Glitch Effect Classes */
+      .glitch-text:hover {
+        text-shadow: 2px 0 #ff003c, -2px 0 #00f0ff;
+        animation: glitch 0.3s infinite;
+      }
+      
+      @keyframes glitch {
+        0% { transform: translate(0) }
+        20% { transform: translate(-2px, 2px) }
+        40% { transform: translate(-2px, -2px) }
+        60% { transform: translate(2px, 2px) }
+        80% { transform: translate(2px, -2px) }
+        100% { transform: translate(0) }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
